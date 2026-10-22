@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ tay Q&A Khối Kỹ thuật 2026 - HITC</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hitc-blue': '#0B3C82',
+                        'hitc-orange': '#F26522',
+                        'hitc-bg': '#F0F4F8'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Thư viện Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #F26522; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #F26522; }
+        .toggle-checkbox { right: 4px; z-index: 1; transition: all 0.3s; }
+        
+        .question-img { max-height: 250px; width: auto; object-fit: contain; border-radius: 8px; margin-top: 12px; }
+
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body { overflow-wrap: anywhere; }
+        button, input, textarea, label { -webkit-tap-highlight-color: transparent; }
+        button, label { touch-action: manipulation; }
+        button:focus-visible, input:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
+            outline: 3px solid #F26522 !important; outline-offset: 2px;
+        }
+        #top-menu { scrollbar-width: thin; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+        #top-menu button { min-height: 44px; scroll-snap-align: start; }
+        #search-input { min-height: 48px; font-size: 16px; }
+        #category-list li { min-height: 44px; }
+        #questions-container, #questions-container > div { min-width: 0; }
+        #questions-container h3 { overflow-wrap: anywhere; }
+        #questions-container label { min-height: 44px; }
+        #questions-container textarea { font-size: 16px; }
+        .question-img { max-width: 100%; height: auto; }
+        #btn-policy { min-height: 44px; }
+        @media (max-width: 767px) {
+            header { position: relative !important; top: auto !important; }
+            header > div:first-child { padding-top: 14px; padding-bottom: 14px; }
+            header > div:first-child > div { width: 100%; gap: 10px; }
+            header h1 { font-size: 16px !important; line-height: 1.35; padding-left: 10px; }
+            header .text-3xl { font-size: 26px; }
+            #btn-policy { width: 100%; }
+            header .max-w-7xl { padding-left: 12px; padding-right: 12px; }
+            #search-input { padding-top: 12px; padding-bottom: 12px; font-size: 16px; }
+            #top-menu { padding-left: 8px; padding-right: 8px; }
+            #top-menu button { padding-left: 14px; padding-right: 14px; font-size: 14px; }
+            main { padding: 16px 12px !important; gap: 16px !important; }
+            main aside { gap: 12px !important; }
+            main aside > div { padding: 13px !important; }
+            #category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+            #category-list li { padding: 9px !important; gap: 5px; align-items: flex-start; }
+            #category-list li span:first-child { font-size: 13px !important; line-height: 1.35; }
+            #category-list li span:last-child { flex-shrink: 0; }
+            #questions-container { gap: 12px !important; }
+            #questions-container > div > div { padding: 14px !important; }
+            #questions-container h3 { font-size: 16px !important; line-height: 1.5 !important; }
+            #questions-container .w-11 { width: 34px; height: 34px; font-size: 15px; }
+            #questions-container label { padding: 11px !important; }
+            #questions-container label span { font-size: 14px !important; }
+            #content-title { font-size: 21px !important; }
+            #content-subtitle { flex-wrap: wrap; }
+            footer { padding-top: 20px; padding-bottom: 20px; }
+        }
+        @media (max-width: 380px) {
+            #category-list { grid-template-columns: 1fr; }
+            #questions-container > div > div { padding: 11px !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-hitc-bg text-gray-800 flex flex-col min-h-screen">
+
+    <!-- KHUNG ĐĂNG NHẬP GOOGLE -->
+    <div id="auth-overlay" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm" style="display: none;">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-md w-full border border-slate-100">
+            <div class="text-3xl font-black text-hitc-orange tracking-tighter mb-2">HITC</div>
+            <h2 class="text-xl font-bold text-hitc-blue mb-2">SỔ TAY Q&A KỸ THUẬT</h2>
+            <p class="text-slate-500 text-sm mb-6">Hệ thống nội bộ yêu cầu đăng nhập bằng tài khoản Google được cấp phép để tiếp tục.</p>
+            <button onclick="loginWithGoogle()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-3">
+                <i class="fa-brands fa-google text-lg"></i> Đăng nhập bằng Google
+            </button>
+            <p id="auth-error-msg" class="text-red-500 text-xs mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="bg-gradient-to-r from-hitc-blue to-blue-900 shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="text-3xl font-black text-hitc-orange tracking-tighter drop-shadow-md">HITC</div>
+                <h1 class="text-xl md:text-2xl font-bold text-white border-l-2 border-blue-400 pl-4 tracking-wide">SỔ TAY Q&A KHỐI KỸ THUẬT 2026</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="btn-policy" onclick="togglePolicyButton()" class="px-5 py-2 rounded-lg font-medium text-white border border-white/40 hover:bg-white hover:text-hitc-blue transition-all duration-300 shadow-sm backdrop-blur-sm">
+                    <i class="fa-solid fa-book-open mr-2"></i> Hệ thống QTQĐ hiện hành
+                </button>
+                <button onclick="logout()" class="px-3 py-2 rounded-lg font-medium text-red-200 border border-red-300/40 hover:bg-red-600 hover:text-white transition-all text-sm" title="Đăng xuất">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 pb-5">
+            <div class="relative max-w-3xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                </div>
+                <input type="search" id="search-input" aria-label="Tìm kiếm câu hỏi, đáp án hoặc từ khóa" autocomplete="off" placeholder="Tìm câu hỏi, đáp án, từ khóa..." 
+                       class="w-full pl-11 pr-4 py-3.5 bg-white/95 border-0 rounded-xl text-lg focus:outline-none focus:ring-4 focus:ring-hitc-orange/50 transition-all shadow-lg text-gray-800">
+                <p id="search-help" class="text-xs text-blue-100 mt-2 px-1" aria-live="polite">Tìm trong câu hỏi, đáp án và tài liệu tham chiếu. Có thể nhập từ khóa không dấu.</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-t-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] mt-2">
+            <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto hide-scrollbar items-center py-1" id="top-menu"></div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-full md:w-72 flex-shrink-0 flex flex-col gap-6">
+            <div id="qtm-folders" class="hidden bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100">
+                <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-folder-tree text-blue-400"></i> Thư mục QTM
+                </h3>
+                <div class="flex bg-blue-100/50 p-1 rounded-lg border border-blue-100">
+                    <button onclick="setSubDept('TDM')" id="btn-tdm" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-hitc-blue">TDM</button>
+                    <button onclick="setSubDept('Metro')" id="btn-metro" class="flex-1 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-hitc-blue transition-colors">Metro</button>
+                </div>
+            </div>
+
+            <div id="level-folders" class="bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100">
+                <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-blue-400"></i> Cấp độ
+                </h3>
+                <div class="flex bg-blue-100/50 p-1 rounded-lg border border-blue-100">
+                    <button onclick="setLevel('L1')" id="btn-l1" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-hitc-blue">Level 1</button>
+                    <button onclick="setLevel('L2')" id="btn-l2" class="flex-1 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-hitc-blue transition-colors">Level 2</button>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100 flex-grow">
+                <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-blue-400"></i> Danh mục Ôn tập
+                </h3>
+                <ul id="category-list" class="space-y-1.5"></ul>
+            </div>
+        </aside>
+
+        <!-- NỘI DUNG CHÍNH -->
+        <section class="flex-1 flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gradient-to-r from-orange-50 to-white p-5 rounded-xl shadow-sm border border-orange-100 border-l-4 border-l-hitc-orange mb-6 gap-4">
+                <div>
+                    <h2 id="content-title" class="text-2xl font-black text-hitc-blue tracking-tight">Danh mục</h2>
+                    <p id="content-subtitle" class="text-sm text-gray-600 mt-1.5 font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-building text-hitc-orange"></i> <span id="content-subtitle-text">Phòng ban • Cấp độ</span>
+                    </p>
+                </div>
+                
+                <!-- Toggle Mode: Mặc định là Thử sức -->
+                <div class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-gray-200 shadow-sm">
+                    <span id="mode-text-review" class="text-sm font-medium text-gray-400">Ôn tập</span>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked onclick="toggleMode()"/>
+                        <label for="mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-hitc-orange cursor-pointer"></label>
+                    </div>
+                    <span id="mode-text-test" class="text-sm font-bold text-hitc-orange">Thử sức</span>
+                </div>
+            </div>
+
+            <!-- Điều khiển số lượng câu hỏi & trạng thái -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-5 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3">
+                    <label for="question-limit" class="text-sm font-bold text-gray-700">Số câu làm bài:</label>
+                    <select id="question-limit" onchange="changeQuestionLimit()" class="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-hitc-orange">
+                        <option value="all">Tất cả câu hỏi</option>
+                        <option value="10">10 câu</option>
+                        <option value="20" selected>20 câu</option>
+                        <option value="50">50 câu</option>
+                        <option value="100">100 câu</option>
+                    </select>
+                </div>
+                <p id="results-status" class="text-sm font-bold text-hitc-blue" aria-live="polite"></p>
+            </div>
+
+            <div id="test-controls" class="flex flex-wrap items-center gap-3 mb-5"></div>
+            
+            <!-- Danh sách câu hỏi -->
+            <div id="questions-container" class="space-y-6"></div>
+            <div id="test-footer-controls" class="mt-6 space-y-4"></div>
+            
+            <!-- Nút quay lại đầu trang -->
+            <div class="flex justify-center mt-6 mb-8">
+                <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 font-bold text-hitc-blue shadow-sm hover:bg-blue-50">
+                    <i class="fa-solid fa-arrow-up"></i> Quay lại đầu trang
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-gray-200 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-500 text-sm italic">
+                "Bộ tài liệu được xây dựng bởi Khối Kỹ thuật – HITC, là tài sản lưu truyền nội bộ, nghiêm cấm sao chép dưới mọi hình thức."
+            </p>
+            <p class="text-gray-400 text-xs mt-2 font-medium">&copy; 2026 HITC</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPT TÍCH HỢP SUPABASE & LOGIC GIAO DIỆN -->
+    <script>
+        // --- 1. CẤU HÌNH SUPABASE ---
+        const SUPABASE_URL = 'https://fkktlascxurscoeroidg.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_LzubsZGtvdKi-sDLa_Mv-w_tSjvWhqB';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let dummyQuestions = [];
+        let currentLimit = 20;
+
+        // Kiểm tra đăng nhập Google & Phân quyền email (Đã tối ưu chống lỗi so khớp)
+        async function checkAuthAndLoad() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                document.getElementById('auth-overlay').style.display = 'flex';
+                return;
+            }
+
+            const userEmail = session.user.email ? session.user.email.trim().toLowerCase() : '';
+            
+            // Truy vấn an toàn không phân biệt hoa thường
+            const { data: allowed, error } = await supabaseClient
+                .from('allowed_emails')
+                .select('email')
+                .ilike('email', userEmail);
+
+            if (error || !allowed || allowed.length === 0) {
+                await supabaseClient.auth.signOut();
+                showAuthError('Tài khoản ' + session.user.email + ' chưa được cấp quyền truy cập hệ thống.');
+                document.getElementById('auth-overlay').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('auth-overlay').style.display = 'none';
+            fetchQuestionsFromSupabase();
+        }
+
+        async function loginWithGoogle() {
+            await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin + window.location.pathname }
+            });
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.reload();
+        }
+
+        function showAuthError(msg) {
+            const errEl = document.getElementById('auth-error-msg');
+            errEl.textContent = msg;
+            errEl.classList.remove('hidden');
+        }
+
+        async function fetchQuestionsFromSupabase() {
+            const { data, error } = await supabaseClient.from('questions').select('*');
+            if (error) {
+                console.error('Lỗi tải câu hỏi:', error.message);
+                return;
+            }
+            dummyQuestions = data || [];
+            if (typeof initApp === 'function') {
+                initApp();
+            } else if (typeof renderCategories === 'function') {
+                renderCategories();
+            }
+        }
+
+        const POINTS = {
+            'QTQĐ': 2.5,
+            'CM tiêu chuẩn': 2.5,
+            'CM khó': 3.5,
+            'CM Tiếng Anh': 3.5,
+            'Tự luận': 20,
+            'Chuyên môn chung': 2.5
+        };
+
+        const DEPARTMENTS = ['Chung', 'NOC', 'QTM', 'QLHT', 'Support'];
+        const CATEGORIES_CONFIG = {
+            'Chung': ['Chuyên môn chung'],
+            'NOC': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'CM Tiếng Anh', 'Tự luận'],
+            'QTM': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'CM Tiếng Anh', 'Tự luận'],
+            'QLHT': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'Tự luận'],
+            'Support': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'Tự luận']
+        };
+
+        function changeQuestionLimit() {
+            const val = document.getElementById('question-limit').value;
+            currentLimit = val === 'all' ? 'all' : parseInt(val);
+            if (typeof renderCurrentCategory === 'function') renderCurrentCategory();
+        }
+
+        checkAuthAndLoad();
+    </script>
+</body>
+</html>
