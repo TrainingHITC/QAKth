@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sổ tay Q&A Khối Kỹ thuật 2026 - HITC</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hitc-blue': '#0B3C82',
+                        'hitc-orange': '#F26522',
+                        'hitc-bg': '#F0F4F8'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Tùy chỉnh Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Chống vỡ layout ảnh */
+        .question-img { max-height: 250px; width: auto; object-fit: contain; border-radius: 8px; margin-top: 12px; }
+
+        /* Tối ưu trải nghiệm tra cứu */
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body { overflow-wrap: anywhere; }
+        button, input, textarea, label { -webkit-tap-highlight-color: transparent; }
+        button, label { touch-action: manipulation; }
+        button:focus-visible, input:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
+            outline: 3px solid #F26522 !important; outline-offset: 2px;
+        }
+        #top-menu { scrollbar-width: thin; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+        #top-menu button { min-height: 44px; scroll-snap-align: start; }
+        #search-input { min-height: 48px; font-size: 16px; }
+        #category-list li { min-height: 44px; }
+        #questions-container, #questions-container > div { min-width: 0; }
+        #questions-container h3 { overflow-wrap: anywhere; }
+        #questions-container label { min-height: 44px; }
+        .question-img { max-width: 100%; height: auto; }
+        #btn-policy { min-height: 44px; }
+        @media (max-width: 767px) {
+            header { position: relative !important; top: auto !important; }
+            header > div:first-child { padding-top: 14px; padding-bottom: 14px; }
+            header > div:first-child > div { width: 100%; gap: 10px; }
+            header h1 { font-size: 16px !important; line-height: 1.35; padding-left: 10px; }
+            header .text-3xl { font-size: 26px; }
+            #btn-policy { width: 100%; }
+            header .max-w-7xl { padding-left: 12px; padding-right: 12px; }
+            #search-input { padding-top: 12px; padding-bottom: 12px; font-size: 16px; }
+            #top-menu { padding-left: 8px; padding-right: 8px; }
+            #top-menu button { padding-left: 14px; padding-right: 14px; font-size: 14px; }
+            main { padding: 16px 12px !important; gap: 16px !important; }
+            main aside { gap: 12px !important; }
+            main aside > div { padding: 13px !important; }
+            #category-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+            #category-list li { padding: 9px !important; gap: 5px; align-items: flex-start; }
+            #category-list li span:first-child { font-size: 13px !important; line-height: 1.35; }
+            #category-list li span:last-child { flex-shrink: 0; }
+            #questions-container { gap: 12px !important; }
+            #questions-container > div > div { padding: 14px !important; }
+            #questions-container h3 { font-size: 16px !important; line-height: 1.5 !important; }
+            #questions-container .w-11 { width: 34px; height: 34px; font-size: 15px; }
+            #questions-container label { padding: 11px !important; }
+            #questions-container label span { font-size: 14px !important; }
+            #content-title { font-size: 21px !important; }
+            #content-subtitle { flex-wrap: wrap; }
+            footer { padding-top: 20px; padding-bottom: 20px; }
+        }
+        @media (max-width: 380px) {
+            #category-list { grid-template-columns: 1fr; }
+            #questions-container > div > div { padding: 11px !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
+
+        /* Hiển thị ảnh câu hỏi */
+        .question-images { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-top: 12px; }
+        .question-images .question-img { max-width: 100%; max-height: 320px; width: auto; height: auto; object-fit: contain; }
+
+        /* Zoom ảnh */
+        .question-img { cursor: zoom-in; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .question-img:hover { box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16); }
+        #image-zoom-overlay {
+            position: fixed; inset: 0; z-index: 99999;
+            display: none; align-items: center; justify-content: center;
+            padding: 56px 16px 24px; background: rgba(8, 15, 30, 0.88);
+            cursor: zoom-out;
+        }
+        #image-zoom-overlay.is-open { display: flex; }
+        #image-zoom-preview {
+            display: block; max-width: min(96vw, 1600px); max-height: calc(100vh - 88px);
+            width: auto; height: auto; object-fit: contain; cursor: default;
+            border-radius: 8px; background: #fff; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+        }
+        #image-zoom-close {
+            position: absolute; top: 12px; right: 16px; z-index: 1;
+            width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.45);
+            border-radius: 999px; background: rgba(255,255,255,.14); color: #fff;
+            font-size: 30px; line-height: 1; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #image-zoom-close:hover { background: rgba(255,255,255,.28); }
+        body.image-zoom-active { overflow: hidden; }
+        @media (max-width: 640px) {
+            #image-zoom-overlay { padding: 60px 8px 16px; }
+            #image-zoom-preview { max-width: 98vw; max-height: calc(100vh - 88px); }
+            #image-zoom-close { top: 10px; right: 10px; }
+        }
+    </style>
+</head>
+<body class="bg-hitc-bg text-gray-800 overflow-hidden">
+    <!-- Thư viện Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- MÀN HÌNH CHỜ -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center p-4">
+        <i class="fa-solid fa-shield-halved text-6xl text-blue-500 mb-6 animate-pulse"></i>
+        <p class="text-white text-lg font-bold animate-pulse">Hệ thống đang quét quyền truy cập...</p>
+    </div>
+
+    <!-- KHUNG ĐĂNG NHẬP -->
+    <div id="auth-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-md w-full border border-slate-100">
+            <div class="text-3xl font-black text-hitc-orange tracking-tighter mb-2">HITC</div>
+            <h2 class="text-xl font-bold text-hitc-blue mb-2">SỔ TAY Q&A KỸ THUẬT</h2>
+            <p class="text-slate-500 text-sm mb-6">Hệ thống yêu cầu đăng nhập bằng tài khoản Google được cấp phép.</p>
+            
+            <button id="btn-login" onclick="loginWithGoogle()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-3">
+                <i class="fa-brands fa-google text-lg"></i> Đăng nhập bằng Google
+            </button>
+            
+            <div id="auth-error-container" class="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl hidden">
+                <p id="auth-error-msg" class="text-red-600 text-sm font-bold mb-3"></p>
+                <button onclick="loginWithGoogle(true)" class="w-full bg-white border border-red-300 text-red-600 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate"></i> Đăng nhập tài khoản khác
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRANG NỘI DUNG CHÍNH -->
+    <div id="app-root" class="hidden">
+        <!-- HEADER -->
+        <header class="bg-gradient-to-r from-hitc-blue to-blue-900 shadow-md sticky top-0 z-50">
+            <!-- Dòng 1: Logo & Tiêu đề -->
+            <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="text-3xl font-black text-hitc-orange tracking-tighter drop-shadow-md">HITC</div>
+                    <h1 class="text-xl md:text-2xl font-bold text-white border-l-2 border-blue-400 pl-4 tracking-wide">SỔ TAY Q&A KHỐI KỸ THUẬT 2026</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-policy" onclick="togglePolicyButton()" class="px-5 py-2 rounded-lg font-medium text-white border border-white/40 hover:bg-white hover:text-hitc-blue transition-all duration-300 shadow-sm backdrop-blur-sm">
+                        <i class="fa-solid fa-book-open mr-2"></i> Hệ thống QTQĐ hiện hành
+                    </button>
+                    <button onclick="logout()" class="px-4 py-2 rounded-lg font-medium text-red-200 border border-red-300/40 hover:bg-red-600 hover:text-white transition-all text-sm shadow-sm" title="Đăng xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dòng 2: Thanh tìm kiếm -->
+            <div class="max-w-7xl mx-auto px-4 pb-5">
+                <div class="relative max-w-3xl mx-auto">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                    </div>
+                    <input type="search" id="search-input" aria-label="Tìm kiếm câu hỏi, đáp án hoặc từ khóa" autocomplete="off" placeholder="Tìm câu hỏi, đáp án, từ khóa..." 
+                           class="w-full pl-11 pr-4 py-3.5 bg-white/95 border-0 rounded-xl text-lg focus:outline-none focus:ring-4 focus:ring-hitc-orange/50 transition-all shadow-lg text-gray-800">
+                    <p id="search-help" class="text-xs text-blue-100 mt-2 px-1" aria-live="polite">Tìm trong câu hỏi, đáp án và tài liệu tham chiếu. Hỗ trợ tìm không dấu.</p>
+                </div>
+            </div>
+
+            <!-- TOP MENU (Menu ngang) -->
+            <div class="bg-white rounded-t-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] mt-2">
+                <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto hide-scrollbar items-center py-1" id="top-menu">
+                    <!-- Render bằng JS -->
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-8 flex flex-col md:flex-row gap-8">
+            
+            <!-- SIDEBAR -->
+            <aside class="w-full md:w-72 flex-shrink-0 flex flex-col gap-6">
+                <!-- Thư mục QTM -->
+                <div id="qtm-folders" class="hidden bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-folder-tree text-blue-400"></i> Thư mục QTM
+                    </h3>
+                    <div class="flex bg-blue-100/50 p-1 rounded-lg border border-blue-100">
+                        <button onclick="setSubDept('TDM')" id="btn-tdm" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-hitc-blue">TDM</button>
+                        <button onclick="setSubDept('Metro')" id="btn-metro" class="flex-1 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-hitc-blue transition-colors">Metro</button>
+                    </div>
+                </div>
+
+                <!-- Cấp độ Level -->
+                <div id="level-folders" class="bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-blue-400"></i> Cấp độ
+                    </h3>
+                    <div class="flex bg-blue-100/50 p-1 rounded-lg border border-blue-100">
+                        <button onclick="setLevel('L1')" id="btn-l1" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-hitc-blue">Level 1</button>
+                        <button onclick="setLevel('L2')" id="btn-l2" class="flex-1 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-hitc-blue transition-colors">Level 2</button>
+                    </div>
+                </div>
+
+                <!-- Danh mục câu hỏi -->
+                <div class="bg-gradient-to-b from-blue-50 to-white p-4 rounded-xl shadow-sm border border-blue-100 flex-grow">
+                    <h3 class="text-sm font-bold text-hitc-blue uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-400"></i> Danh mục Ôn tập
+                    </h3>
+                    <ul id="category-list" class="space-y-1.5">
+                        <!-- Render bằng JS -->
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- NỘI DUNG CỘT PHẢI -->
+            <section class="flex-1 flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gradient-to-r from-orange-50 to-white p-5 rounded-xl shadow-sm border border-orange-100 border-l-4 border-l-hitc-orange mb-6 gap-4">
+                    <div>
+                        <h2 id="content-title" class="text-2xl font-black text-hitc-blue tracking-tight">Danh mục</h2>
+                        <p id="content-subtitle" class="text-sm text-gray-600 mt-1.5 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-building text-hitc-orange"></i> <span id="content-subtitle-text">Phòng ban • Cấp độ</span>
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm text-hitc-orange font-bold text-sm">
+                        <i class="fa-solid fa-book-open-reader"></i> Chế độ Ôn tập & Tra cứu
+                    </div>
+                </div>
+
+                <p id="results-status" class="text-sm text-gray-500 mb-3" aria-live="polite"></p>
+
+                <!-- Vùng chứa danh sách câu hỏi -->
+                <div id="questions-container" class="space-y-6">
+                    <!-- Render bằng JS -->
+                </div>
+
+                <div class="flex justify-center mt-8 mb-8">
+                    <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 font-bold text-hitc-blue shadow-sm hover:bg-blue-50">
+                        <i class="fa-solid fa-arrow-up"></i> Quay lại đầu trang
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="bg-white border-t border-gray-200 py-8 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-gray-500 text-sm italic">
+                    "Bộ tài liệu được xây dựng bởi Khối Kỹ thuật – HITC, là tài sản lưu truyền nội bộ, nghiêm cấm sao chép dưới mọi hình thức."
+                </p>
+                <p class="text-gray-400 text-xs mt-2 font-medium">&copy; 2026 HITC</p>
+            </div>
+        </footer>
+    </div><!-- /#app-root -->
+
+    <script>
+        const SUPABASE_URL = 'https://fkktlascxurscoeroidg.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_LzubsZGtvdKi-sDLa_Mv-w_tSjvWhqB';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let appStarted = false;
+        let isAuthorized = false;
+        window.__authOK = false;
+
+        function showLoginScreen(errorHtml) {
+            isAuthorized = false;
+            window.__authOK = false;
+            const appRoot = document.getElementById('app-root');
+            appRoot.classList.add('hidden');
+            appRoot.classList.remove('flex', 'flex-col', 'min-h-screen');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('loading-overlay').style.display = 'none';
+            if (errorHtml) {
+                document.getElementById('auth-error-msg').innerHTML = errorHtml;
+                document.getElementById('auth-error-container').classList.remove('hidden');
+                document.getElementById('btn-login').classList.add('hidden');
+            }
+            document.getElementById('auth-overlay').style.display = 'flex';
+        }
+
+        async function verifyAccess() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error || !session) return { ok: false };
+                const email = session.user.email ? session.user.email.trim().toLowerCase() : '';
+                if (!email) return { ok: false };
+                const { data: allowed, error: dbError } = await supabaseClient
+                    .from('allowed_emails').select('email').eq('email', email);
+                if (dbError || !allowed || allowed.length === 0) return { ok: false, denied: true, email };
+                return { ok: true, email };
+            } catch (e) {
+                return { ok: false };
+            }
+        }
+
+        async function enterApp() {
+            if (appStarted) return;
+            appStarted = true;
+            isAuthorized = true;
+            window.__authOK = true;
+            if (document.readyState !== 'complete') {
+                await new Promise(r => window.addEventListener('load', r, { once: true }));
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('auth-overlay').style.display = 'none';
+            const appRoot = document.getElementById('app-root');
+            appRoot.classList.remove('hidden');
+            appRoot.classList.add('flex', 'flex-col', 'min-h-screen');
+            document.body.style.overflow = 'auto';
+            window.scrollTo(0, 0);
+            if (typeof startQuizApp === 'function') startQuizApp();
+        }
+
+        async function checkAuth() {
+            const r = await verifyAccess();
+            if (r.ok) { await enterApp(); return; }
+            if (r.denied) {
+                await supabaseClient.auth.signOut();
+                showLoginScreen(`Tài khoản <b class="text-gray-800">${r.email}</b> bị từ chối.`);
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        async function recheckAccess() {
+            if (!appStarted) return;
+            const r = await verifyAccess();
+            if (!r.ok) {
+                await supabaseClient.auth.signOut();
+                window.location.reload();
+            }
+        }
+        setInterval(recheckAccess, 60000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) recheckAccess(); });
+
+        new MutationObserver(() => {
+            const appRoot = document.getElementById('app-root');
+            if (!isAuthorized && !appRoot.classList.contains('hidden')) {
+                appRoot.classList.add('hidden');
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
+            if (!isAuthorized) {
+                const auth = document.getElementById('auth-overlay');
+                if (auth.style.display === 'none') auth.style.display = 'flex';
+            }
+        }).observe(document.getElementById('app-root'), { attributes: true });
+
+        async function loginWithGoogle(forcePrompt = false) {
+            document.getElementById('auth-error-container').classList.add('hidden');
+            document.getElementById('btn-login').classList.remove('hidden');
+            await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { 
+                    redirectTo: window.location.origin + window.location.pathname,
+                    queryParams: forcePrompt ? { prompt: 'select_account' } : {}
+                }
+            });
+        }
+
+        function logout() {
+            supabaseClient.auth.signOut().then(() => window.location.reload());
+        }
+
+        supabaseClient.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT' && appStarted) window.location.reload();
+        });
+
+        checkAuth();
+    </script>
+
+    <!-- LOGIC HIỂN THỊ ÔN TẬP VÀ NGÂN HÀNG DỮ LIỆU -->
+    <script>
+        const POINTS = {
+            'QTQĐ': 2.5,
+            'CM tiêu chuẩn': 2.5,
+            'CM khó': 3.5,
+            'CM Tiếng Anh': 3.5,
+            'Tự luận': 20,
+            'Chuyên môn chung': 2.5
+        };
+
+        const DEPARTMENTS = ['Chung', 'NOC', 'QTM', 'QLHT', 'Support'];
+        const CATEGORIES_CONFIG = {
+            'Chung': ['Chuyên môn chung'],
+            'NOC': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'CM Tiếng Anh', 'Tự luận'],
+            'QTM': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'CM Tiếng Anh', 'Tự luận'],
+            'QLHT': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'Tự luận'],
+            'Support': ['QTQĐ', 'CM tiêu chuẩn', 'CM khó', 'Tự luận']
+        };
+
+        // Giữ nguyên toàn bộ ngân hàng câu hỏi đầy đủ
+        const dummyQuestions = [
+  {
+    "id": 1,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Theo sơ đồ chu kỳ dịch vụ, NOC chủ yếu tham gia vào giai đoạn nào?",
+    "imageUrl": null,
+    "options": [
+      "Triển khai dịch vụ",
+      "Marketing / Bán hàng",
+      "Thiết kế giải pháp",
+      "Vận hành dịch vụ"
+    ],
+    "correctAnswer": 3,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 2,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Sau khi test dịch vụ & nghiệm thu khách hàng, ai bàn giao thông tin vận hành cho NOC & HTML?",
+    "imageUrl": null,
+    "options": [
+      "KD",
+      "CSKH",
+      "PM",
+      "QTM"
+    ],
+    "correctAnswer": 2,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 3,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Khi đang down kết nối/gián đoạn dịch vụ ngay tại thời điểm phát hiện, phải áp dụng quy trình nào?",
+    "imageUrl": null,
+    "options": [
+      "Quy trình Yêu cầu tác động",
+      "Quy trình Xử lý suy hao",
+      ". Quy trình Xử lý sự cố",
+      "Chỉ cần báo cáo lãnh đạo"
+    ],
+    "correctAnswer": 2,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 4,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Phát hiện suy hao link qua rà soát định kỳ của QTM, mà chưa gây lỗi/gián đoạn dịch vụ thì áp dụng quy trình nào?",
+    "imageUrl": null,
+    "options": [
+      "Quy trình Xử lý sự cố",
+      "Quy trình Xử lý suy hao",
+      "Quy trình Yêu cầu tác động ngay lập tức",
+      "Không cần xử lý"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 5,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Trong quy trình xử lý sự cố đứt cáp, sau khi xác định phân đoạn lỗi, bước tiếp theo là gì?",
+    "imageUrl": null,
+    "options": [
+      "Tự ý cắt chuyển",
+      "Đóng ticket ngay",
+      "Chỉ gửi email nội bộ",
+      "Báo đội Ứng cứu cáp quang đi kiểm tra"
+    ],
+    "correctAnswer": 3,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 6,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Bước đầu tiên trong quy trình Ứng cứu nguồn AC khi mất điện AC là gì?",
+    "imageUrl": null,
+    "options": [
+      "Tìm hiểu nguyên nhân mất điện",
+      "Thông báo chạy máy nổ",
+      "Gọi Ứng cứu đến trạm",
+      "Kiểm tra acquy"
+    ],
+    "correctAnswer": 0,
+    "reference": "Quy trình ứng cứu nguồn AC"
+  },
+  {
+    "id": 7,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Công cụ theo dõi chính dùng chung cho ticket sự cố và ticket CR là gì?",
+    "imageUrl": null,
+    "options": [
+      "Modata",
+      "Phần mềm QLSC",
+      "Workbase",
+      "Email nội bộ"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 8,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Trong quy trình Xử lý sự cố, thời gian tối đa của Trực ca để phát hiện & tiếp nhận thông tin sự cố (Bước 1) là bao lâu?",
+    "imageUrl": null,
+    "options": [
+      "5 phút",
+      "15 phút",
+      "30 phút",
+      "1 giờ"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 9,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Với sự cố lớn (diện rộng, đường trục, kênh quốc tế >100M), sau bao lâu CBNV trực ca phải thông tin cho PGĐ/GĐ TT ĐHM?",
+    "imageUrl": null,
+    "options": [
+      "Ngay lập tức",
+      "Sau 30 phút",
+      "Sau 1 giờ",
+      "Sau 2 giờ"
+    ],
+    "correctAnswer": 2,
+    "reference": "Quy trình Vận hành mạng lưới & dịch vụ"
+  },
+  {
+    "id": 10,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Khi kế hoạch xử lý suy hao có nguy cơ ảnh hưởng dịch vụ khác, Hạ tầng phải làm gì?",
+    "imageUrl": null,
+    "options": [
+      "Tự quyết định thực hiện",
+      "Bắt buộc đăng ký yêu cầu tác động (CR trên QLSC) theo quy trình Yêu cầu tác động",
+      "Chỉ thông báo NOC",
+      "Không cần làm gì thêm"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 11,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Phòng nào chịu trách nhiệm lập kế hoạch và thực hiện bảo dưỡng thiết bị mạng IP/Metro và truyền dẫn?",
+    "imageUrl": null,
+    "options": [
+      "Phòng SP – TT HTML",
+      "Phòng QTM – TT ĐHM",
+      "Phòng NOC – TT ĐHM",
+      "Phòng QLHT – TT HTML"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 12,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Phòng CSKH có trách nhiệm gì liên quan đến việc bảo trì/bảo dưỡng?",
+    "imageUrl": null,
+    "options": [
+      "Thực hiện bảo dưỡng phần cứng",
+      "Lập kế hoạch bảo dưỡng phần mềm",
+      "Giám sát thực hiện",
+      "Phối hợp thông báo kế hoạch bảo trì cho khách hàng khi có nguy cơ ảnh hưởng dịch vụ"
+    ],
+    "correctAnswer": 3,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 13,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Theo nguyên tắc thực hiện, NOC có quyền gì khi phát hiện cảnh báo/nguy cơ bất thường trong quá trình các bên thực hiện bảo trì, bảo dưỡng?",
+    "imageUrl": null,
+    "options": [
+      "Chỉ được ghi nhận và báo cáo sau",
+      "Tự ý thay đổi phạm vi bảo dưỡng",
+      ". Có quyền yêu cầu dừng thực hiện để tìm nguyên nhân khắc phục trước khi tiếp tục",
+      "Không có quyền can thiệp"
+    ],
+    "correctAnswer": 2,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 14,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Nếu trong quá trình thực hiện CR phát sinh down link ngoài danh sách đăng ký thì phải xử lý thế nào?",
+    "imageUrl": null,
+    "options": [
+      "Tiếp tục thực hiện kế hoạch",
+      "Yêu cầu Ứng cứu xử lý link down trước khi tiếp tục; tạo thông tin trên QLSC và chạy theo quy trình Xử lý sự cố",
+      "Chỉ ghi nhận và báo cáo sau",
+      "Tự rollback ngay"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 15,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Trước khi thực hiện tác động, ca trực NOC phải kiểm tra điều kiện gì?",
+    "imageUrl": null,
+    "options": [
+      "Chỉ kiểm tra thời tiết",
+      "Kiểm tra hiện trạng mạng lưới: khu vực tác động không có sự cố, mạng lưới đảm bảo",
+      "Chỉ kiểm tra nhân sự có mặt",
+      "Không cần kiểm tra gì thêm"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 16,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Sau khi hoàn thành tác động, mức thu công suất không được thấp hơn quá bao nhiêu dB so với trước tác động?",
+    "imageUrl": null,
+    "options": [
+      "1dB",
+      "0.5dB",
+      "2dB",
+      "3dB"
+    ],
+    "correctAnswer": 1,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 17,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Trong quy trình theo dõi bảo trì nội mạng, trước khi cho phép bảo trì cần làm gì?",
+    "imageUrl": null,
+    "options": [
+      "Chỉ kiểm tra lịch",
+      "Tự ý phê duyệt",
+      "Chỉ gửi email cho khách hàng",
+      "Rà soát kế hoạch trên PM, check hệ thống giám sát, thông báo ban Chuyên trách và xác nhận cho phép/không"
+    ],
+    "correctAnswer": 3,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 18,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Một lưu ý quan trọng về máy nổ ở nhiều trạm là gì?",
+    "imageUrl": null,
+    "options": [
+      "Rất nhiều trạm không có máy nổ cố định, cần đi thuê hoặc điều chuyển; cần hỏi rõ thời gian dự kiến chạy được máy nổ",
+      "Tất cả trạm đều có máy nổ cố định",
+      "Không cần quan tâm thời gian",
+      "Chỉ dùng acquy"
+    ],
+    "correctAnswer": 0,
+    "reference": "Quy trình ứng cứu nguồn AC"
+  },
+  {
+    "id": 19,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Tất cả các tác động lên mạng lưới phải có gì?",
+    "imageUrl": null,
+    "options": [
+      "Email thông báo",
+      "Chỉ báo miệng",
+      "CR (Change Request)",
+      "Không cần gì"
+    ],
+    "correctAnswer": 2,
+    "reference": "Quy trình bảo trì bảo dưỡng mạng lưới"
+  },
+  {
+    "id": 20,
+    "department": "NOC",
+    "subDepartment": null,
+    "level": "L1",
+    "category": "QTQĐ",
+    "content": "Các CR không được phê duyệt thì được phép thực hiện không?",
+    "imageUrl": null,
+    "options": [
+      "Có",
+      "Không",
+      "Chỉ tác động nhỏ",
+      "Tùy cấp độ"
+    ],
+    "correctAnswer": 1,
+    "
